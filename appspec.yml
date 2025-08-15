@@ -1,0 +1,7 @@
+version: 0.0
+Resources:
+  - Kubernetes:
+      Type: AWS::EKS::Application
+      Properties:
+        Name: brain-tasks-app
+        ResourceType: kubernetes

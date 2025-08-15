@@ -1,19 +1,23 @@
 version: 0.2
+
 env:
   variables:
     APP_NAME: "brain-tasks-app"
     ECR_REPO: "brain-tasks-app-repo"
     AWS_REGION: "ap-south-1"
     CLUSTER_NAME: "my-cluster"
-    
+
 phases:
   pre_build:
     commands:
-      - echo "Configuring AWS CLI..."
-      - aws configure set region ap-south-1
-      
-      - echo "Logging in to ECR..."
-      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 346701285224.dkr.ecr.ap-south-1.amazonaws.com
+      - echo "__________________________"
+      - echo "STARTING PRE-BUILD PHASE"
+      - echo "__________________________"
+
+      - aws configure set region $AWS_REGION
+
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin 346701285224.dkr.ecr.ap-south-1.amazonaws.com
 
       - echo "Installing kubectl..."
       - curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -22,29 +26,39 @@ phases:
 
   build:
     commands:
+      - echo "__________________________"
+      - echo "STARTING BUILD PHASE"
+      - echo "__________________________"
+
       - echo "Building Docker image..."
-      - docker build -t brain-tasks-app .
-      - docker tag brain-tasks-app:latest 346701285224.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app-repo:latest
+      - docker build -t $APP_NAME .
+      - docker tag $APP_NAME:latest 346701285224.dkr.ecr.ap-south-1.amazonaws.com/$ECR_REPO:latest
 
   post_build:
     commands:
-      - echo "Pushing image to ECR..."
-      - docker push 346701285224.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app-repo:latest
+      - echo "__________________________"
+      - echo "STARTING POST-BUILD PHASE"
+      - echo "__________________________"
+
+      - echo "Pushing Docker image to ECR..."
+      - docker push 346701285224.dkr.ecr.ap-south-1.amazonaws.com/$ECR_REPO:latest
 
       - echo "Updating kubeconfig for EKS..."
-      - aws eks update-kubeconfig --name my-cluster --region ap-south-1 --kubeconfig /root/.kube/config
+      - aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION --kubeconfig /root/.kube/config
       - export KUBECONFIG=/root/.kube/config
 
       - echo "Applying Kubernetes manifests..."
       - kubectl apply -f deployment.yaml
       - kubectl apply -f service.yaml
-      - kubectl rollout restart deployment brain-tasks-app
-      - kubectl rollout status deployment/brain-tasks-app
 
-      - echo "Fetching LoadBalancer External URL..."
+      - echo "Restarting deployment..."
+      - kubectl rollout restart deployment $APP_NAME
+      - kubectl rollout status deployment/$APP_NAME
+
+      - echo "Fetching LoadBalancer URL..."
       - |
         LOAD_BALANCER=$(kubectl get svc brain-tasks-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-        echo "App deployed at: http://$LOAD_BALANCER"
+        echo "Application deployed at: http://$LOAD_BALANCER"
 
 artifacts:
   files:

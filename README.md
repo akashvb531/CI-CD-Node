@@ -11,7 +11,7 @@ This project demonstrates a full CI/CD pipeline for deploying a simple Node.js a
 ## 🧠 Application Overview
 
 A basic HTTP server created using **Node.js** that returns a simple plain text message:
-`Hello from Brain Tasks App! 234`
+`Hello from Brain Tasks App! `
 
 ---
 
@@ -37,7 +37,7 @@ node server.js
 Navigate to:
 `http://localhost:3000`
 You should see:
-`Hello from Brain Tasks App! 234`
+`Hello from Brain Tasks App! `
 
 ---
 
